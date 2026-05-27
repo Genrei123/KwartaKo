@@ -1,0 +1,1 @@
+enum CascadeMode { soft, strict }

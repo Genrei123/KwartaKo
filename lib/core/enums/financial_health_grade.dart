@@ -1,0 +1,1 @@
+enum HealthGrade { a, b, c, atRisk }
