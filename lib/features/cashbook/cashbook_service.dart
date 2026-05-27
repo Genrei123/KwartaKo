@@ -121,7 +121,14 @@ class CashbookService {
     final rawAllocationBase = monthlyIncome > 0 ? monthlyIncome : profile.monthlyIncome;
 
     // Cap allocation base by actual net worth so we don't allocate money we don't have.
-    final allocationBase = math.min(rawAllocationBase, netWorth > 0 ? netWorth : 0.0);
+    // If rawAllocationBase is 0 (meaning no income logged this month and profile income is 0),
+    // we fall back to the actual positive netWorth so the user can allocate their existing net worth.
+    final double allocationBase;
+    if (rawAllocationBase > 0) {
+      allocationBase = math.min(rawAllocationBase, netWorth > 0 ? netWorth : 0.0);
+    } else {
+      allocationBase = netWorth > 0 ? netWorth : 0.0;
+    }
 
     // Calculate allocations using normalized ratios so that 100% of the assignable pool is distributed
     final totalNeedsWantsFlex = profile.needsRatio + profile.wantsRatio + profile.flexRatio;

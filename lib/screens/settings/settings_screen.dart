@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../features/auth/auth_service.dart';
 import '../../features/cashbook/cashbook_providers.dart';
 import '../../features/dashboard/dashboard_providers.dart';
+import '../../features/wallet/wallet_providers.dart';
 import '../../infrastructure/models/db_models.dart';
 import '../../infrastructure/database_helper.dart';
 import '../auth/create_account_screen.dart';
@@ -790,13 +791,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               await DatabaseHelper.instance.resetDatabase();
               
               // INVALIDATE ALL RIVERPOD STATES
-              ref.invalidate(dashboardSavingsGoalsProvider);
-              ref.invalidate(activeInstallmentsProvider);
-              ref.invalidate(totalDebtPaymentsProvider);
-              ref.invalidate(monthlyBucketSummaryProvider);
+              // Cashbook
+              ref.invalidate(userProfileProvider);
               ref.invalidate(recentTransactionsProvider);
               ref.invalidate(walletBalancesProvider);
               ref.invalidate(netWorthProvider);
+              ref.invalidate(monthlyBucketSummaryProvider);
+              ref.invalidate(dueRecurringTransactionsProvider);
+              ref.invalidate(recurringTransactionsProvider);
+              ref.invalidate(expenseCategoriesProvider);
+              ref.invalidate(incomeCategoriesProvider);
+              ref.invalidate(walletsProvider);
+
+              // Wallet
+              ref.invalidate(walletListProvider);
+              ref.invalidate(walletBalanceMapProvider);
+
+              // Dashboard
+              ref.invalidate(financialHealthScoreProvider);
+              ref.invalidate(emergencyFundProgressProvider);
+              ref.invalidate(monthlyMetricsHistoryProvider);
+              ref.invalidate(dashboardActiveDebtsProvider);
+              ref.invalidate(dashboardSavingsGoalsProvider);
+
+              // Debt Payoff & Savings
+              ref.invalidate(activeInstallmentsProvider);
+              ref.invalidate(totalDebtPaymentsProvider);
               
               // REDIRECT TO ONBOARDING SCREEN
               if (mounted) {

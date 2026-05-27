@@ -81,28 +81,28 @@ class AppRepository {
 
     // Sum income for this wallet
     final incomeResult = await db.rawQuery(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE walletId = ? AND type = 'income'",
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE walletId = ? AND type = 'income' AND isRecurring = 0",
       [walletId],
     );
     final totalIncome = (incomeResult.first['total'] as num).toDouble();
 
     // Sum expenses for this wallet
     final expenseResult = await db.rawQuery(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE walletId = ? AND type = 'expense'",
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE walletId = ? AND type = 'expense' AND isRecurring = 0",
       [walletId],
     );
     final totalExpenses = (expenseResult.first['total'] as num).toDouble();
 
     // Sum transfers INTO this wallet
     final transferInResult = await db.rawQuery(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE transferToWallet = ? AND type = 'transfer'",
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE transferToWallet = ? AND type = 'transfer' AND isRecurring = 0",
       [walletId],
     );
     final totalTransferIn = (transferInResult.first['total'] as num).toDouble();
 
     // Sum transfers OUT of this wallet
     final transferOutResult = await db.rawQuery(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE walletId = ? AND type = 'transfer'",
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE walletId = ? AND type = 'transfer' AND isRecurring = 0",
       [walletId],
     );
     final totalTransferOut = (transferOutResult.first['total'] as num).toDouble();
@@ -133,7 +133,7 @@ class AppRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
-      where: 'walletId = ? OR transferToWallet = ?',
+      where: '(walletId = ? OR transferToWallet = ?) AND isRecurring = 0',
       whereArgs: [walletId, walletId],
       orderBy: 'date DESC, createdAt DESC',
       limit: limit,
@@ -184,6 +184,7 @@ class AppRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
+      where: 'isRecurring = 0',
       orderBy: 'date DESC, createdAt DESC',
       limit: limit,
     );
@@ -198,7 +199,7 @@ class AppRepository {
 
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
-      where: 'date >= ? AND date <= ?',
+      where: 'date >= ? AND date <= ? AND isRecurring = 0',
       whereArgs: [startDate, endDate],
       orderBy: 'date DESC, createdAt DESC',
     );
@@ -214,7 +215,7 @@ class AppRepository {
     final result = await db.rawQuery('''
       SELECT bucket, COALESCE(SUM(amount), 0) as total
       FROM transactions
-      WHERE type = 'expense' AND date >= ? AND date <= ?
+      WHERE type = 'expense' AND date >= ? AND date <= ? AND isRecurring = 0
       GROUP BY bucket
     ''', [startDate, endDate]);
 
@@ -243,7 +244,7 @@ class AppRepository {
     final result = await db.rawQuery('''
       SELECT COALESCE(SUM(amount), 0) as total
       FROM transactions
-      WHERE type = 'income' AND date >= ? AND date <= ?
+      WHERE type = 'income' AND date >= ? AND date <= ? AND isRecurring = 0
     ''', [startDate, endDate]);
 
     return (result.first['total'] as num).toDouble();

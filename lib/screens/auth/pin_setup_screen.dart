@@ -119,31 +119,32 @@ class _PinSetupScreenState extends State<PinSetupScreen>
     return Scaffold(
       backgroundColor: const Color(0xFF0F1B2D),
       body: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(flex: 2),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(flex: 2),
 
             // Splash icon / Logo with Lock fallback
             Container(
               width: 90,
               height: 90,
-              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.green.shade400.withOpacity(0.15),
-                    blurRadius: 24,
-                    spreadRadius: 2,
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(45),
+                borderRadius: BorderRadius.circular(22),
                 child: Image.asset(
                   'assets/icon/splash_icon.png',
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       decoration: BoxDecoration(
@@ -270,8 +271,9 @@ class _PinSetupScreenState extends State<PinSetupScreen>
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNumberPad() {
     return Padding(

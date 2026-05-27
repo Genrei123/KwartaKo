@@ -66,30 +66,43 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               // Welcome icon
               Center(
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: 90,
+                  height: 90,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.green.shade400,
-                        Colors.green.shade700,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.shade400.withOpacity(0.35),
-                        blurRadius: 28,
-                        spreadRadius: 2,
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.savings_outlined,
-                    color: Colors.white,
-                    size: 38,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Image.asset(
+                      'assets/icon/splash_icon.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.green.shade400,
+                                Colors.green.shade700,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.savings_outlined,
+                            color: Colors.white,
+                            size: 38,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),

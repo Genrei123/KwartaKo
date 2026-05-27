@@ -44,6 +44,11 @@ class KwartaKoApp extends StatelessWidget {
         ),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFF0F1B2D),
+        snackBarTheme: const SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFF1E2D4A),
+          contentTextStyle: TextStyle(color: Colors.white),
+        ),
       ),
       home: _AuthGate(authService: authService),
     );

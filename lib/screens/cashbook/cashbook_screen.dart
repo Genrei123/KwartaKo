@@ -45,33 +45,15 @@ class CashbookScreen extends ConsumerWidget {
               snap: true,
               elevation: 0,
               toolbarHeight: 60,
-              title: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.green.shade400,
-                          Colors.green.shade700,
-                        ],
-                      ),
-                    ),
-                    child: const Icon(Icons.savings_rounded, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                     'KwartaKo',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
+              title: const Text(
+                'KwartaKo',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: -0.5,
+                ),
               ),
               actions: [
                 dueRecurring.when(

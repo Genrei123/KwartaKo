@@ -143,128 +143,178 @@ class _PinEntryScreenState extends State<PinEntryScreen>
   }
 
   Widget _buildBiometricView() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Spacer(flex: 2),
-        // Premium pulsing fingerprint icon
-        GestureDetector(
-          onTap: _promptBiometric,
-          child: Container(
-            width: 110,
-            height: 110,
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Spacer(flex: 3),
+
+          // Application Logo on top of Biometric Login
+          Container(
+            width: 90,
+            height: 90,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.green.shade400.withOpacity(0.08),
-              border: Border.all(
-                color: Colors.green.shade400.withOpacity(0.2),
-                width: 2,
-              ),
+              borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.shade400.withOpacity(0.1),
-                  blurRadius: 30,
-                  spreadRadius: 5,
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: Icon(
-              Icons.fingerprint_rounded,
-              color: Colors.green.shade400,
-              size: 56,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Image.asset(
+                'assets/icon/splash_icon.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.green.shade400,
+                          Colors.green.shade700,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.lock_outline_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 32),
-        const Text(
-          'Biometrics Login',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+
+          const Spacer(flex: 1),
+
+          // Premium pulsing fingerprint icon
+          GestureDetector(
+            onTap: _promptBiometric,
+            child: Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.green.shade400.withOpacity(0.08),
+                border: Border.all(
+                  color: Colors.green.shade400.withOpacity(0.2),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.shade400.withOpacity(0.1),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.fingerprint_rounded,
+                color: Colors.green.shade400,
+                size: 56,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Confirm your identity to unlock KwartaKo',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
-        ),
-        const Spacer(flex: 2),
-        // Text button to enter PIN instead
-        TextButton.icon(
-          onPressed: () {
-            setState(() {
-              _currentMode = AuthMode.pin;
-            });
-          },
-          icon: const Icon(Icons.pin_rounded, color: Colors.white60, size: 18),
-          label: const Text(
-            'Use PIN Code instead',
+          const SizedBox(height: 32),
+          const Text(
+            'Biometrics Login',
             style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
           ),
-        ),
-        const SizedBox(height: 48),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            'Confirm your identity to unlock KwartaKo',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+            ),
+          ),
+          const Spacer(flex: 3),
+          // Text button to enter PIN instead
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _currentMode = AuthMode.pin;
+              });
+            },
+            icon: const Icon(Icons.pin_rounded, color: Colors.white60, size: 18),
+            label: const Text(
+              'Use PIN Code instead',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(height: 48),
+        ],
+      ),
     );
   }
 
   Widget _buildPinView() {
-    return Column(
-      children: [
-        const Spacer(flex: 2),
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Spacer(flex: 2),
 
-        // Splash icon / Logo with Lock fallback
-        Container(
-          width: 90,
-          height: 90,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.green.shade400.withOpacity(0.15),
-                blurRadius: 24,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(45),
-            child: Image.asset(
-              'assets/icon/splash_icon_padded.png',
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.green.shade400,
-                        Colors.green.shade700,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+          // Splash icon / Logo with Lock fallback
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Image.asset(
+                'assets/icon/splash_icon.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.green.shade400,
+                          Colors.green.shade700,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.lock_rounded,
-                    color: Colors.white,
-                    size: 36,
-                  ),
-                );
-              },
+                    child: const Icon(
+                      Icons.lock_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
-        ),
 
         const SizedBox(height: 32),
 
@@ -371,8 +421,9 @@ class _PinEntryScreenState extends State<PinEntryScreen>
 
         const SizedBox(height: 32),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNumberPad() {
     return Padding(
