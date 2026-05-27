@@ -211,13 +211,12 @@ class NetWorthBreakdownSheet extends ConsumerWidget {
                           data: (installments) => recurringAsync.when(
                             data: (recurring) {
                               final monthlyIncome = profile?.monthlyIncome ?? 0.0;
-                              final totalDebts = debts;
                               final totalInstallments = installments.fold<double>(0.0, (sum, i) => sum + i.monthlyPayment);
                               final totalRecurringBills = recurring
                                   .where((t) => t.type == 'expense')
                                   .fold<double>(0.0, (sum, t) => sum + t.amount);
 
-                              final projectedNetWorth = netWorth + monthlyIncome - (totalDebts + totalInstallments + totalRecurringBills);
+                              final projectedNetWorth = netWorth + monthlyIncome - (totalInstallments + totalRecurringBills);
 
                               return Container(
                                 padding: const EdgeInsets.all(20),
@@ -244,13 +243,6 @@ class NetWorthBreakdownSheet extends ConsumerWidget {
                                       label: '(+) Projected Income',
                                       value: monthlyIncome,
                                       color: Colors.green.shade400,
-                                      formatter: formatter,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    _buildProjectionRow(
-                                      label: '(-) Active Debt Payments',
-                                      value: -totalDebts,
-                                      color: Colors.red.shade400,
                                       formatter: formatter,
                                     ),
                                     const SizedBox(height: 10),

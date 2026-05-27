@@ -24,9 +24,22 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
   final _totalAmountCtrl = TextEditingController();
   final _monthlyPaymentCtrl = TextEditingController();
   final _monthsTotalCtrl = TextEditingController();
-  final _monthsRemainingCtrl = TextEditingController();
   String? _selectedWalletId;
   bool _saving = false;
+  Set<int> _paidMonths = {}; // Track which month numbers have been paid (1-indexed)
+
+  // Helper method to parse paid months from comma-separated string
+  Set<int> _parsePaidMonths(String paidMonthsStr) {
+    if (paidMonthsStr.isEmpty) return {};
+    return paidMonthsStr.split(',').map((m) => int.tryParse(m.trim()) ?? 0).where((m) => m > 0).toSet();
+  }
+
+  // Helper method to convert Set<int> to comma-separated string
+  String _stringifyPaidMonths() {
+    if (_paidMonths.isEmpty) return '';
+    final sortedMonths = _paidMonths.toList()..sort();
+    return sortedMonths.join(',');
+  }
 
   @override
   void initState() {
@@ -36,8 +49,9 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
       _totalAmountCtrl.text = widget.installment!.totalAmount.toStringAsFixed(2);
       _monthlyPaymentCtrl.text = widget.installment!.monthlyPayment.toStringAsFixed(2);
       _monthsTotalCtrl.text = widget.installment!.monthsTotal.toString();
-      _monthsRemainingCtrl.text = widget.installment!.monthsRemaining.toString();
       _selectedWalletId = widget.installment!.walletId;
+      // Parse paid months from the installment
+      _paidMonths = _parsePaidMonths(widget.installment!.paidMonths);
     }
   }
 
@@ -47,7 +61,6 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
     _totalAmountCtrl.dispose();
     _monthlyPaymentCtrl.dispose();
     _monthsTotalCtrl.dispose();
-    _monthsRemainingCtrl.dispose();
     super.dispose();
   }
 
@@ -56,7 +69,6 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
     final totalAmount = double.tryParse(_totalAmountCtrl.text.trim()) ?? 0.0;
     final monthlyPayment = double.tryParse(_monthlyPaymentCtrl.text.trim()) ?? 0.0;
     final monthsTotal = int.tryParse(_monthsTotalCtrl.text.trim()) ?? 0;
-    final monthsRemaining = int.tryParse(_monthsRemainingCtrl.text.trim()) ?? 0;
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,12 +94,6 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
       );
       return;
     }
-    if (monthsRemaining < 0 || monthsRemaining > monthsTotal) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Remaining months must be between 0 and total months')),
-      );
-      return;
-    }
     if (_selectedWalletId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a payment wallet')),
@@ -96,6 +102,10 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
     }
 
     setState(() => _saving = true);
+
+    // Calculate months remaining based on paid months
+    final monthsRemaining = monthsTotal - _paidMonths.length;
+    final paidMonthsStr = _stringifyPaidMonths();
 
     final repo = ref.read(appRepositoryProvider);
     final id = widget.installment?.id ?? const Uuid().v4();
@@ -109,6 +119,7 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
       startDate: widget.installment?.startDate ?? DateTime.now().millisecondsSinceEpoch,
       walletId: _selectedWalletId!,
       isActive: monthsRemaining > 0 ? 1 : 0,
+      paidMonths: paidMonthsStr,
     );
 
     if (widget.installment != null) {
@@ -139,6 +150,7 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
       startDate: widget.installment!.startDate,
       walletId: widget.installment!.walletId,
       isActive: 0, // Soft delete/archive
+      paidMonths: widget.installment!.paidMonths,
     );
 
     await repo.updateInstallment(installment);
@@ -251,18 +263,22 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _label('MONTHS REMAINING'),
-                            const SizedBox(height: 8),
-                            _integerField(_monthsRemainingCtrl, 'e.g. 8'),
-                          ],
-                        ),
-                      ),
                     ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  _label('MARK MONTHS AS PAID'),
+                  const SizedBox(height: 12),
+                  _buildMonthSelector(),
+                  const SizedBox(height: 24),
+                  
+                  Text(
+                    'Months Remaining: ${(int.tryParse(_monthsTotalCtrl.text.trim()) ?? 0) - _paidMonths.length}',
+                    style: TextStyle(
+                      color: Colors.green.shade400,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -359,6 +375,86 @@ class _InstallmentEditorSheetState extends ConsumerState<InstallmentEditorSheet>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMonthSelector() {
+    final monthsTotal = int.tryParse(_monthsTotalCtrl.text.trim()) ?? 0;
+    if (monthsTotal <= 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: Text(
+          'Enter total months above to enable month selector',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.4),
+            fontSize: 13,
+          ),
+        ),
+      );
+    }
+
+    // Create a grid of month buttons
+    return GridView.count(
+      crossAxisCount: 4,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: List.generate(monthsTotal, (index) {
+        final monthNum = index + 1;
+        final isPaid = _paidMonths.contains(monthNum);
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isPaid) {
+                _paidMonths.remove(monthNum);
+              } else {
+                _paidMonths.add(monthNum);
+              }
+            });
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isPaid
+                  ? Colors.green.shade600
+                  : Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isPaid
+                    ? Colors.green.shade400
+                    : Colors.white.withOpacity(0.12),
+                width: isPaid ? 2 : 1,
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'M$monthNum',
+                    style: TextStyle(
+                      color: isPaid ? Colors.white : Colors.white.withOpacity(0.6),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (isPaid)
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 

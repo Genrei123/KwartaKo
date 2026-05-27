@@ -199,6 +199,7 @@ class DbInstallment {
   final int startDate;
   final String walletId;
   final int isActive; // 0 or 1
+  final String paidMonths; // Comma-separated list of paid month numbers (e.g., "1,2,4,5")
 
   DbInstallment({
     required this.id,
@@ -210,6 +211,7 @@ class DbInstallment {
     required this.startDate,
     required this.walletId,
     this.isActive = 1,
+    this.paidMonths = '',
   });
 
   Map<String, dynamic> toMap() => {
@@ -222,6 +224,7 @@ class DbInstallment {
         'startDate': startDate,
         'walletId': walletId,
         'isActive': isActive,
+        'paidMonths': paidMonths,
       };
 
   factory DbInstallment.fromMap(Map<String, dynamic> map) => DbInstallment(
@@ -234,6 +237,7 @@ class DbInstallment {
         startDate: map['startDate'],
         walletId: map['walletId'],
         isActive: map['isActive'],
+        paidMonths: map['paidMonths'] ?? '',
       );
 }
 

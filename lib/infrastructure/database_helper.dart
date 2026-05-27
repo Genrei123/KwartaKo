@@ -29,7 +29,7 @@ class DatabaseHelper {
     // e.g., if you release an app update and change your schema, change version to 2.
     return await openDatabase(
       path,
-      version: 1, 
+      version: 2, 
       onCreate: _createDB,
       onUpgrade: _upgradeDB, // Handles schema changes on updates
     );
@@ -58,14 +58,10 @@ class DatabaseHelper {
   // It gives you the oldVersion (what's on the user's phone) and newVersion
   // (the code they just downloaded from the App Store).
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // Example migration:
-    // if (oldVersion < 2) {
-    //   // Scenario: On v2 update, we want to add an 'icon' column to wallets
-    //   await db.execute('ALTER TABLE wallets ADD COLUMN icon TEXT');
-    // }
-    // if (oldVersion < 3) {
-    //   // Add another table later...
-    // }
+    // Add paidMonths column to installments table to track which months have been paid
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE installments ADD COLUMN paidMonths TEXT DEFAULT \'\'');
+    }
   }
 
   Future<void> close() async {

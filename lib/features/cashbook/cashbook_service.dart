@@ -114,20 +114,11 @@ class CashbookService {
     final monthlyIncome = await _repository.getMonthlyIncome(month, year);
     final spending = await _repository.getMonthlyBucketSpending(month, year);
     final totalDebt = await _repository.getTotalActiveDebtPayments();
-    final netWorth = await getNetWorth();
 
-    // If no income logged this month, fall back to the user's declared
-    // monthly income so that budget buckets are always populated.
-    final rawAllocationBase = monthlyIncome > 0 ? monthlyIncome : profile.monthlyIncome;
-
-    // Use the logged monthly income or the profile monthly income as the static allocation base.
-    // If both are 0, we fall back to the positive net worth so they have a baseline budget.
-    final double allocationBase;
-    if (rawAllocationBase > 0) {
-      allocationBase = rawAllocationBase;
-    } else {
-      allocationBase = netWorth > 0 ? netWorth : 0.0;
-    }
+    // Use monthly income as the allocation base.
+    // If no income logged this month, fall back to the user's declared monthly income.
+    // This ensures budgeting is based on expected income, not capped by current net worth.
+    final double allocationBase = monthlyIncome > 0 ? monthlyIncome : profile.monthlyIncome;
 
     // Calculate allocations using normalized ratios so that 100% of the assignable pool is distributed
     final totalNeedsWantsFlex = profile.needsRatio + profile.wantsRatio + profile.flexRatio;
@@ -136,7 +127,8 @@ class CashbookService {
     final flexNormRatio = totalNeedsWantsFlex > 0 ? profile.flexRatio / totalNeedsWantsFlex : 0.0;
 
     final emergencyAlloc = allocationBase * profile.emergencyRatio;
-    final assignable = allocationBase - emergencyAlloc - totalDebt;
+    final debtDeduction = totalDebt; // Fixed debt obligation, not scaled
+    final assignable = (allocationBase - emergencyAlloc - debtDeduction).clamp(0.0, double.infinity);
     final needsAlloc = assignable > 0 ? assignable * needsNormRatio : 0.0;
     final wantsAlloc = assignable > 0 ? assignable * wantsNormRatio : 0.0;
     final flexAlloc = assignable > 0 ? assignable * flexNormRatio : 0.0;
