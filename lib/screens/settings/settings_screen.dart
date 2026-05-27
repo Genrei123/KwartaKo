@@ -790,6 +790,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // WIPE ALL DATABASE TABLES
               await DatabaseHelper.instance.resetDatabase();
               
+              // RE-SEED DEFAULT CATEGORIES SO THEY ARE NOT EMPTY AFTER RESET
+              await ref.read(appRepositoryProvider).seedDefaultCategories();
+              
               // INVALIDATE ALL RIVERPOD STATES
               // Cashbook
               ref.invalidate(userProfileProvider);

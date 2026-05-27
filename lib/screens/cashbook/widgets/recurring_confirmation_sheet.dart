@@ -195,16 +195,42 @@ class _RecurringConfirmationSheetState extends ConsumerState<RecurringConfirmati
             children: [
               Expanded(
                 child: TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    final selectedTemplates = widget.dueTransactions
+                        .where((tx) => _selected[tx.id] == true)
+                        .toList();
+
+                    if (selectedTemplates.isNotEmpty) {
+                      final service = ref.read(cashbookServiceProvider);
+                      for (final template in selectedTemplates) {
+                        await service.skipRecurringTransaction(template);
+                      }
+                      invalidateCashbookProviders(ref);
+                      
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Skipped ${selectedTemplates.length} recurring item(s) for this month.'),
+                            backgroundColor: Colors.amber.shade700,
+                          ),
+                        );
+                      }
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    'Skip for now',
-                    style: TextStyle(
+                  child: Text(
+                    widget.dueTransactions.any((tx) => _selected[tx.id] == true)
+                        ? 'Skip Selected'
+                        : 'Close',
+                    style: const TextStyle(
                       color: Colors.white54,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -215,36 +241,38 @@ class _RecurringConfirmationSheetState extends ConsumerState<RecurringConfirmati
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () async {
-                    final selectedTemplates = widget.dueTransactions
-                        .where((tx) => _selected[tx.id] == true)
-                        .toList();
+                  onPressed: widget.dueTransactions.any((tx) => _selected[tx.id] == true)
+                      ? () async {
+                          final selectedTemplates = widget.dueTransactions
+                              .where((tx) => _selected[tx.id] == true)
+                              .toList();
 
-                    if (selectedTemplates.isNotEmpty) {
-                      final service = ref.read(cashbookServiceProvider);
-                      for (final template in selectedTemplates) {
-                        await service.logRecurringTransaction(template);
-                      }
-                      invalidateCashbookProviders(ref);
-                    }
+                          if (selectedTemplates.isNotEmpty) {
+                            final service = ref.read(cashbookServiceProvider);
+                            for (final template in selectedTemplates) {
+                              await service.logRecurringTransaction(template);
+                            }
+                            invalidateCashbookProviders(ref);
+                          }
 
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            selectedTemplates.isEmpty
-                                ? 'No recurring items processed.'
-                                : 'Successfully logged ${selectedTemplates.length} recurring transaction(s)!',
-                          ),
-                          backgroundColor: Colors.green.shade600,
-                        ),
-                      );
-                    }
-                  },
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Successfully logged ${selectedTemplates.length} recurring transaction(s)!',
+                                ),
+                                backgroundColor: Colors.green.shade600,
+                              ),
+                            );
+                          }
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade500,
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.white.withOpacity(0.05),
+                    disabledForegroundColor: Colors.white.withOpacity(0.2),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

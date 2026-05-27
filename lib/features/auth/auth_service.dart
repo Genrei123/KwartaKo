@@ -37,6 +37,9 @@ class AuthService {
     );
 
     await _repository.saveUserProfile(newProfile);
+    
+    // Seed categories here to make absolutely sure they exist for new accounts
+    await _repository.seedDefaultCategories();
   }
 
   // ---------------------------------------------------------------------------

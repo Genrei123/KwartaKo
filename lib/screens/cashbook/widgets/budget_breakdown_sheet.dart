@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../features/cashbook/cashbook_providers.dart';
+import '../../../features/wallet/wallet_providers.dart';
 import '../../../infrastructure/models/db_models.dart';
 
 class BudgetBreakdownSheet extends ConsumerStatefulWidget {
@@ -109,10 +110,286 @@ class _BudgetBreakdownSheetState extends ConsumerState<BudgetBreakdownSheet> {
     }
   }
 
+  void _showSecureEmergencyDialog(BuildContext context, double remaining) {
+    final wallets = ref.read(walletsProvider).value ?? [];
+    if (wallets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please create a wallet first.')),
+      );
+      return;
+    }
+
+    String? sourceWalletId;
+    String? destWalletId;
+
+    // Default select
+    sourceWalletId = wallets.first.id;
+    final emergencyWallet = wallets.firstWhere(
+      (w) => w.name.toLowerCase().contains('emergency'),
+      orElse: () => wallets.first,
+    );
+    destWalletId = emergencyWallet.id;
+
+    final amountController = TextEditingController(text: remaining.toStringAsFixed(2));
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF0F1B2D),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: Colors.white.withOpacity(0.08)),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.lock_person_rounded, color: Colors.redAccent, size: 24),
+                  SizedBox(width: 10),
+                  Text(
+                    'Secure Funds',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Lock money into your dedicated Emergency Wallet to protect it from general spending.',
+                      style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 13, height: 1.4),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Amount Field
+                    Text(
+                      'AMOUNT TO SECURE',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.35),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
+                        prefixText: '₱ ',
+                        prefixStyle: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600),
+                        hintText: '0.00',
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.15)),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.03),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.red.shade400.withOpacity(0.4)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+
+                    // Source Wallet Dropdown
+                    Text(
+                      'SOURCE WALLET (WITHDRAW FROM)',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.35),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withOpacity(0.06)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: sourceWalletId,
+                          dropdownColor: const Color(0xFF0F1B2D),
+                          icon: Icon(Icons.arrow_drop_down, color: Colors.white.withOpacity(0.5)),
+                          isExpanded: true,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                          items: wallets.map((w) {
+                            return DropdownMenuItem<String>(
+                              value: w.id,
+                              child: Text(w.name),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            setDialogState(() {
+                              sourceWalletId = val;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Destination Wallet Dropdown
+                    Text(
+                      'DESTINATION EMERGENCY WALLET',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.35),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withOpacity(0.06)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: destWalletId,
+                          dropdownColor: const Color(0xFF0F1B2D),
+                          icon: Icon(Icons.arrow_drop_down, color: Colors.white.withOpacity(0.5)),
+                          isExpanded: true,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                          items: wallets.map((w) {
+                            return DropdownMenuItem<String>(
+                              value: w.id,
+                              child: Text(w.name),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            setDialogState(() {
+                              destWalletId = val;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final secureAmount = double.tryParse(amountController.text.trim()) ?? 0.0;
+                    if (secureAmount <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Enter a valid amount')),
+                      );
+                      return;
+                    }
+                    if (secureAmount > remaining) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cannot secure more than remaining emergency budget')),
+                      );
+                      return;
+                    }
+                    if (sourceWalletId == null || destWalletId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Select source and destination wallets')),
+                      );
+                      return;
+                    }
+                    if (sourceWalletId == destWalletId) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Source and destination wallets must be different')),
+                      );
+                      return;
+                    }
+
+                    final service = ref.read(cashbookServiceProvider);
+                    
+                    try {
+                      // 1. Log withdrawal expense from source wallet
+                      await service.logExpense(
+                        amount: secureAmount,
+                        walletId: sourceWalletId!,
+                        categoryId: 'cat-emergency',
+                        bucket: 'needs',
+                        note: 'Secured to Emergency Wallet',
+                      );
+
+                      // 2. Log deposit income to emergency wallet
+                      await service.logIncome(
+                        amount: secureAmount,
+                        walletId: destWalletId!,
+                        categoryId: 'cat-interest',
+                        bucket: 'emergency',
+                        note: 'Secured from General Spending',
+                      );
+
+                      invalidateCashbookProviders(ref);
+                      invalidateWalletProviders(ref);
+
+                      if (context.mounted) {
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('₱${secureAmount.toStringAsFixed(2)} secured successfully!'),
+                            backgroundColor: Colors.green.shade600,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error securing funds: $e'),
+                            backgroundColor: Colors.red.shade600,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade500,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text(
+                    'Lock & Secure',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bucketSummaryAsync = ref.watch(monthlyBucketSummaryProvider);
     final userProfileAsync = ref.watch(userProfileProvider);
+    ref.watch(walletsProvider); // Watch so changes refresh the screen
     final formatter = NumberFormat.currency(symbol: '₱', decimalDigits: 2);
 
     return Container(
@@ -682,6 +959,32 @@ class _BudgetBreakdownSheetState extends ConsumerState<BudgetBreakdownSheet> {
               ),
             ),
           ),
+          if (title == 'Emergency' && remaining > 0) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 38,
+              child: ElevatedButton.icon(
+                onPressed: () => _showSecureEmergencyDialog(context, remaining),
+                icon: const Icon(Icons.lock_person_rounded, size: 16, color: Colors.white),
+                label: const Text(
+                  'Secure Emergency Funds',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -120,12 +120,11 @@ class CashbookService {
     // monthly income so that budget buckets are always populated.
     final rawAllocationBase = monthlyIncome > 0 ? monthlyIncome : profile.monthlyIncome;
 
-    // Cap allocation base by actual net worth so we don't allocate money we don't have.
-    // If rawAllocationBase is 0 (meaning no income logged this month and profile income is 0),
-    // we fall back to the actual positive netWorth so the user can allocate their existing net worth.
+    // Use the logged monthly income or the profile monthly income as the static allocation base.
+    // If both are 0, we fall back to the positive net worth so they have a baseline budget.
     final double allocationBase;
     if (rawAllocationBase > 0) {
-      allocationBase = math.min(rawAllocationBase, netWorth > 0 ? netWorth : 0.0);
+      allocationBase = rawAllocationBase;
     } else {
       allocationBase = netWorth > 0 ? netWorth : 0.0;
     }
@@ -253,6 +252,15 @@ class CashbookService {
     final List<DbTransaction> due = [];
 
     for (final template in templates) {
+      // 1. Check if this template was already logged or skipped for this specific month & year.
+      final templateDateTime = DateTime.tryParse(template.date);
+      if (templateDateTime != null) {
+        if (templateDateTime.month == currentMonth && templateDateTime.year == currentYear) {
+          // Already processed this month!
+          continue;
+        }
+      }
+
       final targetDay = template.recurringDay ?? 1;
       if (currentDay >= targetDay) {
         final alreadyLogged = monthlyTxList.any((tx) {
@@ -279,6 +287,8 @@ class CashbookService {
   Future<void> logRecurringTransaction(DbTransaction template) async {
     final now = DateTime.now();
     final targetDate = DateTime(now.year, now.month, template.recurringDay ?? now.day);
+    
+    // Log the actual transaction
     final tx = DbTransaction(
       id: const Uuid().v4(),
       date: targetDate.toIso8601String(),
@@ -292,6 +302,48 @@ class CashbookService {
       createdAt: DateTime.now().millisecondsSinceEpoch,
     );
     await _repository.insertTransaction(tx);
+
+    // Update the template date to now to mark it processed for this month/year
+    final updatedTemplate = DbTransaction(
+      id: template.id,
+      date: now.toIso8601String(),
+      type: template.type,
+      amount: template.amount,
+      walletId: template.walletId,
+      categoryId: template.categoryId,
+      bucket: template.bucket,
+      note: template.note,
+      isRecurring: 1,
+      recurringDay: template.recurringDay,
+      transferToWallet: template.transferToWallet,
+      createdAt: template.createdAt,
+    );
+    await _repository.updateTransaction(updatedTemplate);
+  }
+
+  Future<void> skipRecurringTransaction(DbTransaction template) async {
+    final now = DateTime.now();
+    // Update the template date to now to mark it as skipped/processed for this month/year
+    final updatedTemplate = DbTransaction(
+      id: template.id,
+      date: now.toIso8601String(),
+      type: template.type,
+      amount: template.amount,
+      walletId: template.walletId,
+      categoryId: template.categoryId,
+      bucket: template.bucket,
+      note: template.note,
+      isRecurring: 1,
+      recurringDay: template.recurringDay,
+      transferToWallet: template.transferToWallet,
+      createdAt: template.createdAt,
+    );
+    await _repository.updateTransaction(updatedTemplate);
+  }
+
+  /// Delete a transaction by ID
+  Future<void> deleteTransaction(String id) async {
+    await _repository.deleteTransaction(id);
   }
 }
 

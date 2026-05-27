@@ -3,6 +3,8 @@ import '../../infrastructure/repositories/app_repository.dart';
 import '../../infrastructure/models/db_models.dart';
 import '../cashbook/cashbook_service.dart';
 
+import '../dashboard/dashboard_providers.dart';
+
 // ---------------------------------------------------------------------------
 // CORE PROVIDERS
 // ---------------------------------------------------------------------------
@@ -63,13 +65,25 @@ final monthlyBucketSummaryProvider = FutureProvider<BucketSummary>((ref) {
 });
 
 /// Expense categories
-final expenseCategoriesProvider = FutureProvider<List<DbCategory>>((ref) {
-  return ref.watch(cashbookServiceProvider).getExpenseCategories();
+final expenseCategoriesProvider = FutureProvider<List<DbCategory>>((ref) async {
+  final service = ref.watch(cashbookServiceProvider);
+  var list = await service.getExpenseCategories();
+  if (list.isEmpty) {
+    await ref.read(appRepositoryProvider).seedDefaultCategories();
+    list = await service.getExpenseCategories();
+  }
+  return list;
 });
 
 /// Income categories
-final incomeCategoriesProvider = FutureProvider<List<DbCategory>>((ref) {
-  return ref.watch(cashbookServiceProvider).getIncomeCategories();
+final incomeCategoriesProvider = FutureProvider<List<DbCategory>>((ref) async {
+  final service = ref.watch(cashbookServiceProvider);
+  var list = await service.getIncomeCategories();
+  if (list.isEmpty) {
+    await ref.read(appRepositoryProvider).seedDefaultCategories();
+    list = await service.getIncomeCategories();
+  }
+  return list;
 });
 
 /// Active installments
@@ -104,5 +118,6 @@ void invalidateCashbookProviders(WidgetRef ref) {
   ref.invalidate(netWorthProvider);
   ref.invalidate(monthlyBucketSummaryProvider);
   ref.invalidate(dueRecurringTransactionsProvider);
+  invalidateDashboardProviders(ref);
 }
 

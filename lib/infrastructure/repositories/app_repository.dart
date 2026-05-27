@@ -169,6 +169,16 @@ class AppRepository {
     );
   }
 
+  Future<void> updateTransaction(DbTransaction transaction) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'transactions',
+      transaction.toMap(),
+      where: 'id = ?',
+      whereArgs: [transaction.id],
+    );
+  }
+
   Future<List<DbTransaction>> getRecurringTransactions() async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
